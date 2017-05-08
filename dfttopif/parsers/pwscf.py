@@ -85,6 +85,20 @@ class PwscfParser(DFTParser):
                     energy = line.split()[4:]
                     return Property(scalars=float(energy[0]), units=energy[1])
             raise Exception('%s not found in %s'%('! & total energy',os.path.join(self._directory, self.outputf)))
+        
+    def get_BEEF_ensemble(self):
+        '''Return the 2000 value BEEF ensemble'''
+        with open(os.path.join(self._directory, self.outputf)) as fp:
+            # reading file backwards in case relaxation run
+            log_lines =reversed(fp.readlines())
+            for line_number,line in enumerate(log_lines):
+                if "BEEFens" in line and "ensemble energies" in line:
+                    ensemble_location = range(line_number-2001,line_number-1)
+                    ens = []
+                    for ens_line in ensemble_location[::-1]:
+                        ens.append(float(log_lines[ens_line].strip()))
+                    return ens
+            raise Exception('%s not found in %s'%('BEEFens & ensemble energies',os.path.join(self._directory, self.outputf)))
 
     @Value_if_true
     def is_relaxed(self):
