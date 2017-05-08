@@ -100,6 +100,50 @@ class PwscfParser(DFTParser):
         else:
             # static run case
             return self._get_line('convergence has been achieved', self.outputf, return_string=False)
+            
+    def get_Kpoint_density(self):
+        '''Determine the no. of k-points in the BZ (from the input) times the
+        no. of atoms (from the output)'''
+        # Find the no. of k-points
+        fp = open(os.path.join(self._directory, self.inputf)).readlines()
+        for l,ll in enumerate(fp):
+            if "K_POINTS" in ll:
+                # determine the type of input
+                if len(ll.split()) > 1:
+                    if "gamma" in ll.split()[1].lower():
+                        ktype = 'gamma'
+                    elif "automatic" in ll.split()[1].lower():
+                        ktype = 'automatic'
+                    else:
+                        ktype = ''
+                else: ktype = ''
+                if ktype == 'gamma':
+                    # gamma point:
+                    # K_POINTS {gamma}
+                    nk = 1
+                elif ktype == 'automatic':
+                    # automatic:
+                    # K_POINTS automatic
+                    #  12 12 1 0 0 0
+                    line = [int(i) for i in fp[l+1].split()[0:3]]
+                    xyz = line #this perserves the number in each direction
+                    nk = line[0]*line[1]*line[2]
+                else:
+                    # manual:
+                    # K_POINTS
+                    #  3
+                    #  0.125  0.125  0.0  1.0
+                    #  0.125  0.375  0.0  2.0
+                    #  0.375  0.375  0.0  1.0
+                    nk = 0
+                    for k in range(int(fp[l+1].split()[0])):
+                        nk += int(float(fp[l+2+k].split()[3]))
+                # Find the no. of atoms
+                natoms = int(self._get_line('number of atoms/cell', self.outputf).split()[4])
+                return Value(vectors=xyz)
+        fp.close()
+        raise Exception('%s not found in %s'%('KPOINTS',os.path.join(self._directory, self.inputf)))
+        
 
     def get_KPPRA(self):
         '''Determine the no. of k-points in the BZ (from the input) times the
@@ -140,7 +184,7 @@ class PwscfParser(DFTParser):
                         nk += int(float(fp[l+2+k].split()[3]))
                 # Find the no. of atoms
                 natoms = int(self._get_line('number of atoms/cell', self.outputf).split()[4])
-                return Value(scalars=nk*natoms,vectors=xyz)
+                return Value(scalars=nk*natoms)
         fp.close()
         raise Exception('%s not found in %s'%('KPOINTS',os.path.join(self._directory, self.inputf)))
 

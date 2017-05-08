@@ -15,6 +15,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 import numpy as np
 import spglib
 
+
 class AseEspressoParser(PwscfParser):
     '''
     Parser for PWSCF calculations
@@ -58,6 +59,7 @@ class AseEspressoParser(PwscfParser):
             'Relaxed':'is_relaxed',
             'Cutoff Energy':'get_cutoff_energy',
             'k-Points per Reciprocal Atom':'get_KPPRA',
+            'k-Point Density':'get_Kpoint_density',
             'Spin-Orbit Coupling':'uses_SOC',
             'DFT+U':'get_U_settings',
             'vdW Interactions':'get_vdW_settings',
@@ -245,7 +247,8 @@ def dict_to_atoms(doc):
                                  atoms=atoms)
     atoms.set_calculator(calc)
     return atoms
-    
+from ase import units
+  
 def PIF_to_calculator(PIF_object):
     PIF = PIF_object.as_dictionary()
     props = PIF['properties']
@@ -253,9 +256,26 @@ def PIF_to_calculator(PIF_object):
     assert len(energy) == 1
     energy = energy[0]
     conditions = energy['conditions']
+    
     for c in conditions:
-        print(c['name'])
-    l = PIF.properties
-    
-    
-    
+        if c['name'] == 'Cutoff Energy':
+            encut = c['scalars'][0]['value'] * units.Rydberg
+            encut = np.round(encut,1)
+#            print('Encut')
+#            print(encut)
+        elif c['name'] == 'XC Functional':
+            xc = c['scalars'][0]['value']
+#            print(xc)
+        elif c['name'] == '':
+            xc = c['scalars'][0]['value']
+        elif c['name'] == 'k-Point Density':
+            kpt = c['vectors'][0]
+            kpt = [x['value'] for x in kpt]
+#            print(kpt)
+            
+    calcargs = {'xc':xc,
+                    'kpts':kpt,
+                    'pw':encut,
+    }
+            
+    return calcargs
