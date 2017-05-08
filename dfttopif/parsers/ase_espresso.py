@@ -4,7 +4,10 @@ from .base import DFTParser, Value_if_true
 from .pwscf import PwscfParser
 import os
 from pypif.obj.common.value import Value
-from ase import Atoms
+from ase import Atom, Atoms, units
+from ase.io.espresso import make_atoms, build_atoms, get_atomic_positions, get_cell_parameters, str2value, read_fortran_namelist, f2f
+from ase.calculators.singlepoint import SinglePointCalculator
+import numpy as np
 
 class AseEspressoParser(PwscfParser):
     '''
@@ -82,3 +85,62 @@ class AseEspressoParser(PwscfParser):
                         ens.append(float(log_lines[ens_line].strip()))
                     return ens
             raise Exception('%s not found in %s'%('BEEFens & ensemble energies',os.path.join(self._directory, self.outputf)))
+
+def espresso_out_to_atoms(fileobj, index=None):
+    """Reads quantum espresso output text files."""
+    if isinstance(fileobj, basestring):
+        fileobj = open(fileobj, 'rU')
+    lines = fileobj.readlines()
+    images = []
+
+    # Check for multiple runs
+    pydir_line = [i for i,line in enumerate(lines) if 'python dir' in line]
+    if len(pydir_line) > 1: #multiple runs, keep last only
+        lines = lines[pydir_line[-1]:]
+
+    # Get unit cell info.
+    bl_line = [line for line in lines if 'bravais-lattice index' in line]
+    if len(bl_line) != 1:
+        raise NotImplementedError('Unsupported: unit cell changing.')
+    bl_line = bl_line[0].strip()
+    brav_latt_index = bl_line.split('=')[1].strip()
+    if brav_latt_index != '0':
+        raise NotImplementedError('Supported only for Bravais-lattice '
+                                  'index of 0 (free).')
+    lp_line = [line for line in lines if 'lattice parameter (alat)' in
+               line]
+    if len(lp_line) != 1:
+        raise NotImplementedError('Unsupported: unit cell changing.')
+    lp_line = lp_line[0].strip().split('=')[1].strip().split()[0]
+    lattice_parameter = float(lp_line) * units.Bohr
+    ca_line_no = [number for (number, line) in enumerate(lines) if
+                  'crystal axes: (cart. coord. in units of alat)' in line]
+    if len(ca_line_no) != 1:
+        raise NotImplementedError('Unsupported: unit cell changing.')
+    ca_line_no = int(ca_line_no[0])
+    cell = np.zeros((3, 3))
+    for number, line in enumerate(lines[ca_line_no + 1: ca_line_no + 4]):
+        line = line.split('=')[1].strip()[1:-1]
+        values = [float(value) for value in line.split()]
+        cell[number, 0] = values[0]
+        cell[number, 1] = values[1]
+        cell[number, 2] = values[2]
+    cell *= lattice_parameter
+
+    # Find atomic positions and add to images.
+    for number, line in enumerate(lines):
+        key = 'Begin final coordinates'  # these just reprint last posn.
+        if key in line:
+            break
+        key = 'Cartesian axes'
+        if key in line:
+            atoms = make_atoms(number, lines, key, cell)
+            images.append(atoms)
+        key = 'ATOMIC_POSITIONS (crystal)'
+        if key in line:
+            atoms = make_atoms(number, lines, key, cell)
+            images.append(atoms)
+    if index is None:
+        return images
+    else:
+        return images[index]
