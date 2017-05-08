@@ -40,15 +40,6 @@ class AseEspressoParser(PwscfParser):
             except UnicodeDecodeError:
                 pass
         return False
-
-    def get_KPPRA(self):
-        return None
-
-    def get_vdW_settings(self):
-        return None
-
-    def get_dos(self):
-        return None
         
     def get_setting_functions(self):
         '''Get a dictionary containing the names of methods
