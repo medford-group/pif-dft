@@ -4,6 +4,7 @@ import tarfile
 import shutil
 from dfttopif.parsers import VaspParser
 from dfttopif.parsers import PwscfParser
+from dfttopif.parsers import AseEspressoParser
 from pypif.obj import *
 
 
@@ -69,13 +70,13 @@ def directory_to_pif(directory, verbose=0, quality_report=False):
 
     # Look for the first parser compatible with the directory
     foundParser = False
-    for possible_parser in [VaspParser, PwscfParser]:
+    for possible_parser in [VaspParser, PwscfParser, AseEspressoParser]:
         try:
             parser = possible_parser(directory)
             if parser.test_if_from(directory):
                 foundParser = True
                 break
-        except: pass
+        except Exception: pass
     if not foundParser:
         raise Exception('Directory is not in correct format for an existing parser')
     if verbose > 0:
