@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from dfttopif import directory_to_pif
 from pypif import pif
 import sys
