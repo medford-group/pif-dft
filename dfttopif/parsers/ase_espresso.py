@@ -60,16 +60,6 @@ class AseEspressoParser(PwscfParser):
 #            'ASE atoms':'get_atoms',
             'POSCAR':'get_poscar',
         }
-
-#    def get_KPPRA(self):
-#        '''Determine the no. of k-points in the BZ (from the input) times the
-#        no. of atoms (from the output)'''
-#        return None
-#
-#    def get_vdW_settings(self):
-#        '''Determine the vdW type if using vdW xc functional or correction
-#        scheme from the input otherwise'''
-#        return None
         
     def get_total_energy(self):
         '''Determine the total energy from the output'''
