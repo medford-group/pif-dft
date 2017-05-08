@@ -143,7 +143,7 @@ class AseEspressoParser(PwscfParser):
         d['chemical_symbols'] = list(set(syms))
         d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
         d['spacegroup'] = spglib.get_spacegroup(atoms)
-        return Property(scalars=float(energy[0]), units=energy[1], histogram=hist)
+        return d
         
     def dict_to_atoms(doc):
         """
