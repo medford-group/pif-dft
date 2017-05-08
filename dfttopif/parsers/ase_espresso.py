@@ -1,17 +1,19 @@
 from pypif.obj.common.property import Property
 
+from ase.calculators.calculator import PropertyNotImplementedError
 from .base import DFTParser, Value_if_true
 from .pwscf import PwscfParser
 import os
 from pypif.obj.common.value import Value
 import json
 from ase.io.jsonio import encode
-from collections import OrderedDict
 from ase.constraints import dict2constraint
 from ase import Atom, Atoms, units
+from ase.utils import basestring
 from ase.io.espresso import make_atoms, build_atoms, get_atomic_positions, get_cell_parameters, str2value, read_fortran_namelist, f2f
 from ase.calculators.singlepoint import SinglePointCalculator
 import numpy as np
+import spglib
 
 class AseEspressoParser(PwscfParser):
     '''
@@ -36,6 +38,15 @@ class AseEspressoParser(PwscfParser):
             except UnicodeDecodeError:
                 pass
         return False
+
+    def get_KPPRA(self):
+        return None
+
+    def get_vdW_settings(self):
+        return None
+
+    def get_dos(self):
+        return None
         
     def get_setting_functions(self):
         '''Get a dictionary containing the names of methods
@@ -55,19 +66,9 @@ class AseEspressoParser(PwscfParser):
             'vdW Interactions':'get_vdW_settings',
             'Psuedopotentials':'get_pp_name',
             'INCAR':'get_incar',
-#            'ASE atoms':'get_atoms',
+            'ASE atoms':'get_atoms',
             'POSCAR':'get_poscar',
         }
-
-    def get_KPPRA(self):
-        '''Determine the no. of k-points in the BZ (from the input) times the
-        no. of atoms (from the output)'''
-        return None
-
-    def get_vdW_settings(self):
-        '''Determine the vdW type if using vdW xc functional or correction
-        scheme from the input otherwise'''
-        return None
         
     def get_total_energy(self):
         '''Determine the total energy from the output'''
@@ -111,6 +112,13 @@ class AseEspressoParser(PwscfParser):
                         ens.append(float(log_lines[ens_line].strip()))
                     return ens
             raise Exception('%s not found in %s'%('BEEFens & ensemble energies',os.path.join(self._directory, self.outputf)))
+
+    def get_atoms(self):
+        logfile = os.path.join(self._directory, self.outputf)
+        atoms = espresso_out_to_atoms(logfile)[-1]
+        atom_dict = atoms_to_dict(atoms)
+        return Value(scalars=str(atom_dict))
+
 
 def espresso_out_to_atoms(fileobj, index=None):
     """Reads quantum espresso output text files."""
@@ -171,23 +179,19 @@ def espresso_out_to_atoms(fileobj, index=None):
     else:
         return images[index]
 
-def atoms_to_dict(self):
+def atoms_to_dict(atoms):
     """
     converts an atoms object into a dictionary of the properties. Mostly 
     copied from the Kitchin group
     """
-    atoms = io.read(os.path.join(self._directory, 'converged_slab.traj'),)
-#        atoms = io.read(os.path.join(self._directory, self.outputf),-1,format='espresso-out')
     
-    d = OrderedDict(atoms=[{'symbol': atom.symbol,
+    d = dict(atoms=[{'symbol': atom.symbol,
                         'position': json.loads(encode(atom.position)),
-#                            'position': atom.position,
                         'tag': atom.tag,
                         'index': atom.index,
                         'charge': atom.charge,
                         'momentum': json.loads(encode(atom.momentum)),
-#                            'momentum': atom.momentum,
-                            'magmom': atom.magmom}
+                        'magmom': atom.magmom}
                            for atom in atoms],
                     cell=atoms.cell,
                     pbc=atoms.pbc,
@@ -204,24 +208,21 @@ def atoms_to_dict(self):
     d['chemical_symbols'] = list(set(syms))
     d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
     d['spacegroup'] = spglib.get_spacegroup(atoms)
+    try:
+        d['calculator.forces'] = atoms.get_forces()
+    except PropertyNotImplementedError:
+        d['calculator.forces'] = None
+
+    try:
+        d['calculator.energy'] = atoms.get_potential_energy()
+    except PropertyNotImplementedError:
+        d['calculator.energy'] = None
+
+    try:
+        d['calculator.stress'] = atoms.get_stress()
+    except PropertyNotImplementedError:
+        d['calculator.stress'] = None
     return d
-        
-    def dict_to_atoms(doc):
-        """
-        Takes in a PIF dictionary and creates an atoms object. Mostly copied 
-        from Kitchin group.
-        """
-        atoms = Atoms([Atom(atom['symbol'],
-                                atom['position'],
-                                tag=atom['tag'],
-                                momentum=atom['momentum'],
-                                magmom=atom['magmom'],
-                                charge=atom['charge'])
-                           for atom in doc['atoms']['atoms']],
-                          cell=doc['atoms']['cell'],
-                          pbc=doc['atoms']['pbc'],
-                          info=doc['atoms']['info'],
-                          constraint=[dict2constraint(c) for c in doc['atoms']['constraints']])
     
 def dict_to_atoms(doc):
     """
@@ -240,11 +241,10 @@ def dict_to_atoms(doc):
                       info=doc['atoms']['info'],
                       constraint=[dict2constraint(c) for c in doc['atoms']['constraints']])
 
-#        from ase.calculators.singlepoint import SinglePointCalculator
-#        results = doc['results']
-#        calc = SinglePointCalculator(energy=results.get('energy', None),
-#                                     forces=results.get('forces', None),
-#                                     stress=results.get('stress', None),
-#                                     atoms=atoms)
-#        atoms.set_calculator(calc)
+    from ase.calculators.singlepoint import SinglePointCalculator
+    calc = SinglePointCalculator(energy=doc.get('calculator.energy', None),
+                                 forces=doc.get('calculator.forces', None),
+                                 stress=doc.get('calculator.stress', None),
+                                 atoms=atoms)
+    atoms.set_calculator(calc)
     return atoms
