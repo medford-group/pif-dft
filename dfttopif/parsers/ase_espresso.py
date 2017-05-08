@@ -31,6 +31,8 @@ class AseEspressoParser(PwscfParser):
             try:
                 if self._get_line('Program PWSCF', f, basedir=directory, return_string=False):
                     self.outputf = f
+                elif self._get_line('&control', f, basedir=directory, return_string=False, case_sens=False):
+                    self.inputf = f
                 if self.outputf: 
                     return True
             except UnicodeDecodeError:
@@ -59,15 +61,15 @@ class AseEspressoParser(PwscfParser):
             'POSCAR':'get_poscar',
         }
 
-    def get_KPPRA(self):
-        '''Determine the no. of k-points in the BZ (from the input) times the
-        no. of atoms (from the output)'''
-        return None
-
-    def get_vdW_settings(self):
-        '''Determine the vdW type if using vdW xc functional or correction
-        scheme from the input otherwise'''
-        return None
+#    def get_KPPRA(self):
+#        '''Determine the no. of k-points in the BZ (from the input) times the
+#        no. of atoms (from the output)'''
+#        return None
+#
+#    def get_vdW_settings(self):
+#        '''Determine the vdW type if using vdW xc functional or correction
+#        scheme from the input otherwise'''
+#        return None
         
     def get_total_energy(self):
         '''Determine the total energy from the output'''
@@ -205,23 +207,6 @@ def atoms_to_dict(self):
     d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
     d['spacegroup'] = spglib.get_spacegroup(atoms)
     return d
-        
-    def dict_to_atoms(doc):
-        """
-        Takes in a PIF dictionary and creates an atoms object. Mostly copied 
-        from Kitchin group.
-        """
-        atoms = Atoms([Atom(atom['symbol'],
-                                atom['position'],
-                                tag=atom['tag'],
-                                momentum=atom['momentum'],
-                                magmom=atom['magmom'],
-                                charge=atom['charge'])
-                           for atom in doc['atoms']['atoms']],
-                          cell=doc['atoms']['cell'],
-                          pbc=doc['atoms']['pbc'],
-                          info=doc['atoms']['info'],
-                          constraint=[dict2constraint(c) for c in doc['atoms']['constraints']])
     
 def dict_to_atoms(doc):
     """
