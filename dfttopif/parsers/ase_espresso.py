@@ -187,25 +187,42 @@ def atoms_to_dict(self):
                         'charge': atom.charge,
                         'momentum': json.loads(encode(atom.momentum)),
 #                            'momentum': atom.momentum,
-                        'magmom': atom.magmom}
-                       for atom in atoms],
-                cell=atoms.cell,
-                pbc=atoms.pbc,
-                info=atoms.info,
-                constraints=[c.todict() for c in atoms.constraints])
-                    # redundant information for search convenience.
-    d['natoms'] = len(atoms)
-    cell = atoms.get_cell()
-    if cell is not None and np.linalg.det(cell) > 0:
-        d['volume'] = atoms.get_volume()
-
-    d['mass'] = sum(atoms.get_masses())
-
-    syms = atoms.get_chemical_symbols()
-    d['chemical_symbols'] = list(set(syms))
-    d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
-    d['spacegroup'] = spglib.get_spacegroup(atoms)
-    return Property(scalars=float(energy[0]), units=energy[1], histogram=hist)
+                            'magmom': atom.magmom}
+                           for atom in atoms],
+                    cell=atoms.cell,
+                    pbc=atoms.pbc,
+                    info=atoms.info,
+                    constraints=[c.todict() for c in atoms.constraints])
+                        # redundant information for search convenience.
+        d['natoms'] = len(atoms)
+        cell = atoms.get_cell()
+        if cell is not None and np.linalg.det(cell) > 0:
+            d['volume'] = atoms.get_volume()
+    
+        d['mass'] = sum(atoms.get_masses())
+    
+        syms = atoms.get_chemical_symbols()
+        d['chemical_symbols'] = list(set(syms))
+        d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
+        d['spacegroup'] = spglib.get_spacegroup(atoms)
+        return d
+        
+    def dict_to_atoms(doc):
+        """
+        Takes in a PIF dictionary and creates an atoms object. Mostly copied 
+        from Kitchin group.
+        """
+        atoms = Atoms([Atom(atom['symbol'],
+                                atom['position'],
+                                tag=atom['tag'],
+                                momentum=atom['momentum'],
+                                magmom=atom['magmom'],
+                                charge=atom['charge'])
+                           for atom in doc['atoms']['atoms']],
+                          cell=doc['atoms']['cell'],
+                          pbc=doc['atoms']['pbc'],
+                          info=doc['atoms']['info'],
+                          constraint=[dict2constraint(c) for c in doc['atoms']['constraints']])
     
 def dict_to_atoms(doc):
     """
