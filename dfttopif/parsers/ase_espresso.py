@@ -39,17 +39,46 @@ class AseEspressoParser(PwscfParser):
         '''Determine the vdW type if using vdW xc functional or correction
         scheme from the input otherwise'''
         return None
+        
+    def get_total_energy(self):
+        '''Determine the total energy from the output'''
+        hist = self.get_total_energy_histogram()
+        with open(os.path.join(self._directory, self.outputf)) as fp:
+            # reading file backwards in case relaxation run
+            for line in reversed(fp.readlines()):
+                if "!" in line and "total energy" in line:
+                    energy = line.split()[4:]
+                    return Property(scalars=float(energy[0]), units=energy[1], histogram=hist)
+            raise Exception('%s not found in %s'%('! & total energy',os.path.join(self._directory, self.outputf)))
 
     def get_total_energy_histogram(self):
         '''Return the 2000 value BEEF ensemble'''
         with open(os.path.join(self._directory, self.outputf)) as fp:
+            txt = fp.read()
+            _,E_total = txt.rsplit('total energy              =',1)
+            E_total,_ = E_total.split('Ry',1)
+            E_total = float(E_total.strip())
+            E_total *= 13.605698
+            _, ens = txt.rsplit('BEEFens 2000 ensemble energies',1)
+            ens,_ = ens.split('BEEF-vdW xc energy contributions',1)
+            ens.strip()
+            ens_ryd = []
+            for Ei in ens.split('\n'):
+                if Ei.strip():
+                    Ei = float(Ei.strip())
+                    ens_ryd.append(Ei)
+            ens_ryd = ens_ryd
+            return ens_ryd
+
             # reading file backwards in case relaxation run
-            log_lines =reversed(fp.readlines())
+            log_lines = reversed(fp.readlines())
+            
             for line_number,line in enumerate(log_lines):
                 if "BEEFens" in line and "ensemble energies" in line:
                     ensemble_location = range(line_number-2001,line_number-1)
                     ens = []
                     for ens_line in ensemble_location[::-1]:
+                        
                         ens.append(float(log_lines[ens_line].strip()))
                     return ens
             raise Exception('%s not found in %s'%('BEEFens & ensemble energies',os.path.join(self._directory, self.outputf)))
