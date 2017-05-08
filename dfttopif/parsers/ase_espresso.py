@@ -41,11 +41,6 @@ class AseEspressoParser(PwscfParser):
                 pass
         return False
 
-    def get_KPPRA(self):
-        return None
-
-    def get_vdW_settings(self):
-        return None
 
     def get_dos(self):
         return None
@@ -250,6 +245,7 @@ def dict_to_atoms(doc):
                                  atoms=atoms)
     atoms.set_calculator(calc)
     return atoms
+    
 def PIF_to_calculator(PIF_object):
     PIF = PIF_object.as_dictionary()
     props = PIF['properties']
