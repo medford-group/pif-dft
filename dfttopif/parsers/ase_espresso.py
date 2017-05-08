@@ -223,3 +223,16 @@ def dict_to_atoms(doc):
 #                                     atoms=atoms)
 #        atoms.set_calculator(calc)
     return atoms
+def PIF_to_calculator(PIF_object):
+    PIF = PIF_object.as_dictionary()
+    props = PIF['properties']
+    energy = [p for p in props if p['name'] == 'Total Energy']
+    assert len(energy) == 1
+    energy = energy[0]
+    conditions = energy['conditions']
+    for c in conditions:
+        print(c['name'])
+    l = PIF.properties
+    
+    
+    

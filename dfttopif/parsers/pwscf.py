@@ -126,6 +126,7 @@ class PwscfParser(DFTParser):
                     # K_POINTS automatic
                     #  12 12 1 0 0 0
                     line = [int(i) for i in fp[l+1].split()[0:3]]
+                    xyz = line #this perserves the number in each direction
                     nk = line[0]*line[1]*line[2]
                 else:
                     # manual:
@@ -139,7 +140,7 @@ class PwscfParser(DFTParser):
                         nk += int(float(fp[l+2+k].split()[3]))
                 # Find the no. of atoms
                 natoms = int(self._get_line('number of atoms/cell', self.outputf).split()[4])
-                return Value(scalars=nk*natoms)
+                return Value(scalars=nk*natoms,vectors=xyz)
         fp.close()
         raise Exception('%s not found in %s'%('KPOINTS',os.path.join(self._directory, self.inputf)))
 
