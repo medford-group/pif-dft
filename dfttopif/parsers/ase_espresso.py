@@ -193,19 +193,18 @@ def atoms_to_dict(self):
                     pbc=atoms.pbc,
                     info=atoms.info,
                     constraints=[c.todict() for c in atoms.constraints])
-                        # redundant information for search convenience.
-        d['natoms'] = len(atoms)
-        cell = atoms.get_cell()
-        if cell is not None and np.linalg.det(cell) > 0:
-            d['volume'] = atoms.get_volume()
-    
-        d['mass'] = sum(atoms.get_masses())
-    
-        syms = atoms.get_chemical_symbols()
-        d['chemical_symbols'] = list(set(syms))
-        d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
-        d['spacegroup'] = spglib.get_spacegroup(atoms)
-        return d
+    d['natoms'] = len(atoms)
+    cell = atoms.get_cell()
+    if cell is not None and np.linalg.det(cell) > 0:
+        d['volume'] = atoms.get_volume()
+
+    d['mass'] = sum(atoms.get_masses())
+
+    syms = atoms.get_chemical_symbols()
+    d['chemical_symbols'] = list(set(syms))
+    d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
+    d['spacegroup'] = spglib.get_spacegroup(atoms)
+    return d
         
     def dict_to_atoms(doc):
         """
