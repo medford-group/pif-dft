@@ -55,7 +55,7 @@ class AseEspressoParser(PwscfParser):
             'vdW Interactions':'get_vdW_settings',
             'Psuedopotentials':'get_pp_name',
             'INCAR':'get_incar',
-            'ASE atoms':'get_atoms',
+#            'ASE atoms':'get_atoms',
             'POSCAR':'get_poscar',
         }
 
