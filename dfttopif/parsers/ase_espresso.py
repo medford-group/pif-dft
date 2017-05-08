@@ -1,5 +1,6 @@
 from pypif.obj.common.property import Property
 
+from collections import OrderedDict
 from ase.calculators.calculator import PropertyNotImplementedError
 from .base import DFTParser, Value_if_true
 from .pwscf import PwscfParser
@@ -36,15 +37,13 @@ class AseEspressoParser(PwscfParser):
                     self.outputf = f
                 elif self._get_line('&control', f, basedir=directory, return_string=False, case_sens=False):
                     self.inputf = f
-                if self.outputf: 
-                    return True
+
             except UnicodeDecodeError:
                 pass
+
+        if self.outputf and self.inputf: 
+            return True
         return False
-
-
-    def get_dos(self):
-        return None
         
     def get_setting_functions(self):
         '''Get a dictionary containing the names of methods
@@ -116,7 +115,7 @@ class AseEspressoParser(PwscfParser):
         logfile = os.path.join(self._directory, self.outputf)
         atoms = espresso_out_to_atoms(logfile)[-1]
         atom_dict = atoms_to_dict(atoms)
-        return Value(scalars=str(atom_dict))
+        return Value(scalars=atom_dict)
 
 
 def espresso_out_to_atoms(fileobj, index=None):
@@ -184,7 +183,7 @@ def atoms_to_dict(atoms):
     copied from the Kitchin group
     """
     
-    d = dict(atoms=[{'symbol': atom.symbol,
+    d = OrderedDict(atoms=[{'symbol': atom.symbol,
                         'position': json.loads(encode(atom.position)),
                         'tag': atom.tag,
                         'index': atom.index,
@@ -192,8 +191,8 @@ def atoms_to_dict(atoms):
                         'momentum': json.loads(encode(atom.momentum)),
                         'magmom': atom.magmom}
                            for atom in atoms],
-                    cell=atoms.cell,
-                    pbc=atoms.pbc,
+                    cell=atoms.cell.tolist(),
+                    pbc=atoms.pbc.tolist(),
                     info=atoms.info,
                     constraints=[c.todict() for c in atoms.constraints])
     d['natoms'] = len(atoms)
@@ -208,7 +207,7 @@ def atoms_to_dict(atoms):
     d['symbol_counts'] = {sym: syms.count(sym) for sym in syms}
     d['spacegroup'] = spglib.get_spacegroup(atoms)
     try:
-        d['calculator.forces'] = atoms.get_forces()
+        d['calculator.forces'] = atoms.get_forces().tolist()
     except PropertyNotImplementedError:
         d['calculator.forces'] = None
 
@@ -218,11 +217,12 @@ def atoms_to_dict(atoms):
         d['calculator.energy'] = None
 
     try:
-        d['calculator.stress'] = atoms.get_stress()
+        d['calculator.stress'] = atoms.get_stress().tolist()
     except PropertyNotImplementedError:
         d['calculator.stress'] = None
     return d
     
+
 def dict_to_atoms(doc):
     """
     Takes in a PIF dictionary and creates an atoms object. Mostly copied 
@@ -279,3 +279,4 @@ def PIF_to_calculator(PIF_object):
     }
             
     return calcargs
+

@@ -1,0 +1,30 @@
+---------------------------------------
+Begin PBS Prologue Wed Mar  1 14:15:17 EST 2017
+Job ID:     2314574.dedicated-sched.pace.gatech.edu
+User ID:    amedford6
+Job name:   optimizer
+Queue:      joe-6-ge
+End PBS Prologue Wed Mar  1 14:15:17 EST 2017
+---------------------------------------
+--------------------------------------------------------------------------
+[[62731,1],12]: A high-performance Open MPI point-to-point messaging module
+was unable to find any relevant network interfaces:
+
+Module: OpenFabrics (openib)
+  Host: iw-k35-13
+
+Another transport will be used instead, although this may result in
+lower performance.
+--------------------------------------------------------------------------
+---------------------------------------
+Begin PBS Epilogue Thu Mar  2 02:15:21 EST 2017
+Job ID:     2314574.dedicated-sched.pace.gatech.edu
+User ID:    amedford6
+Job name:   optimizer
+Resources:  neednodes=2:ppn=12,nodes=2:ppn=12,walltime=12:00:00
+Rsrc Used:  cput=251:25:32,energy_used=0,mem=15404032kb,vmem=25610208kb,walltime=12:00:03
+Queue:      joe-6-ge
+Nodes:     
+iw-k35-12.pace.gatech.edu iw-k35-13.pace.gatech.edu
+End PBS Epilogue Thu Mar  2 02:15:21 EST 2017
+---------------------------------------
