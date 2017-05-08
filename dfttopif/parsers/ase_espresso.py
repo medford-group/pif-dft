@@ -33,6 +33,8 @@ class AseEspressoParser(PwscfParser):
             try:
                 if self._get_line('Program PWSCF', f, basedir=directory, return_string=False):
                     self.outputf = f
+                elif self._get_line('&control', f, basedir=directory, return_string=False, case_sens=False):
+                    self.inputf = f
                 if self.outputf: 
                     return True
             except UnicodeDecodeError:
