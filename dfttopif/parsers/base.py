@@ -100,7 +100,7 @@ class DFTParser(object):
         return {
             'Converged':'is_converged',
             'Total Energy':'get_total_energy',
-            'Total Energy Histogram':'get_energy_histogram',
+            'Total Energy Histogram':'get_total_energy_histogram',
             'Band Gap Energy':'get_band_gap',
             'Pressure':'get_pressure',
             'Density of States':'get_dos',
