@@ -219,30 +219,6 @@ def atoms_to_dict(atoms):
         d['calculator.stress'] = None
     return d
     
-def dict_to_atoms(doc):
-    """
-    Takes in a PIF dictionary and creates an atoms object. Mostly copied 
-    from Kitchin group.
-    """
-    atoms = Atoms([Atom(atom['symbol'],
-                            atom['position'],
-                            tag=atom['tag'],
-                            momentum=atom['momentum'],
-                            magmom=atom['magmom'],
-                            charge=atom['charge'])
-                       for atom in doc['atoms']['atoms']],
-                      cell=doc['atoms']['cell'],
-                      pbc=doc['atoms']['pbc'],
-                      info=doc['atoms']['info'],
-                      constraint=[dict2constraint(c) for c in doc['atoms']['constraints']])
-
-    from ase.calculators.singlepoint import SinglePointCalculator
-    calc = SinglePointCalculator(energy=doc.get('calculator.energy', None),
-                                 forces=doc.get('calculator.forces', None),
-                                 stress=doc.get('calculator.stress', None),
-                                 atoms=atoms)
-    atoms.set_calculator(calc)
-    return atoms
     
 def PIF_to_calculator(PIF_object):
     PIF = PIF_object.as_dictionary()
