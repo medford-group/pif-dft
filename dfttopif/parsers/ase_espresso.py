@@ -35,10 +35,12 @@ class AseEspressoParser(PwscfParser):
                     self.outputf = f
                 elif self._get_line('&control', f, basedir=directory, return_string=False, case_sens=False):
                     self.inputf = f
-                if self.outputf: 
-                    return True
+
             except UnicodeDecodeError:
                 pass
+
+        if self.outputf and self.inputf: 
+            return True
         return False
         
     def get_setting_functions(self):
@@ -241,3 +243,17 @@ def dict_to_atoms(doc):
                                  atoms=atoms)
     atoms.set_calculator(calc)
     return atoms
+    
+def PIF_to_calculator(PIF_object):
+    PIF = PIF_object.as_dictionary()
+    props = PIF['properties']
+    energy = [p for p in props if p['name'] == 'Total Energy']
+    assert len(energy) == 1
+    energy = energy[0]
+    conditions = energy['conditions']
+    for c in conditions:
+        print(c['name'])
+    l = PIF.properties
+    
+    
+    
